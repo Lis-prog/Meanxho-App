@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f3efe6;
+  --surface: #fffdf8;
+  --ink: #1c1915;
+  --muted: #6e665c;
+  --line: #e4daca;
+  --pine: #0e6b52;
+  --pine-deep: #084838;
+  --pine-soft: #e6f4ee;
+  --danger: #8d2e2a;
+  --danger-soft: #f8ebe7;
+  --shadow: 0 24px 60px -32px rgb(28 25 21 / 0.45);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-pine: var(--pine);
+  --color-pine-deep: var(--pine-deep);
+  --color-pine-soft: var(--pine-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
+  background:
+    radial-gradient(900px 420px at 10% -10%, rgb(14 107 82 / 0.08), transparent 60%),
+    var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: #cfe7db;
+}
+
+:focus-visible {
+  outline: 2px solid var(--pine);
+  outline-offset: 3px;
+}
+
+input[type="date"] {
+  min-height: 48px;
+}
