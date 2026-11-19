@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isIsoDate, monthRange, shiftDays, shiftMonth, todayInTimeZone } from "@/lib/dates";
+import { clampMonth, daysRemainingInMonth, earliestMonth, isIsoDate, monthRange, shiftDays, shiftMonth, todayInTimeZone, weekRangeContaining } from "@/lib/dates";
 
 describe("calendar dates", () => {
   it("accepts a leap day and rejects a fake one", () => {
@@ -29,5 +29,24 @@ describe("calendar dates", () => {
     const instant = new Date("2026-01-15T23:30:00.000Z");
     expect(todayInTimeZone("Europe/Tirane", instant)).toBe("2026-01-16");
     expect(todayInTimeZone("UTC", instant)).toBe("2026-01-15");
+  });
+
+  it("includes today when counting remaining days", () => {
+    expect(daysRemainingInMonth("2026-03-18", 2026, 3)).toBe(14);
+    expect(daysRemainingInMonth("2026-03-31", 2026, 3)).toBe(1);
+    expect(daysRemainingInMonth("2026-03-18", 2026, 2)).toBe(0);
+    expect(weekRangeContaining("2026-03-18")).toEqual({ start: "2026-03-16", end: "2026-03-22" });
+  });
+
+  it("does not let the month filter move into a future month", () => {
+    const current = { year: 2026, month: 10 };
+    const start = earliestMonth(["2026-10-02"], "2026-10-02");
+    expect(start).toEqual(current);
+    expect(clampMonth({ year: 2026, month: 11 }, start, current)).toEqual(current);
+    expect(clampMonth({ year: 2026, month: 1 }, start, current)).toEqual(start);
+  });
+
+  it("starts the filter at the first month with data", () => {
+    expect(earliestMonth(["2026-08-20", "2026-10-01"], "2026-10-02")).toEqual({ year: 2026, month: 8 });
   });
 });

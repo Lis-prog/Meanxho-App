@@ -18,7 +18,7 @@ export function LocaleSwitch({ locale }: { locale: Locale }) {
         name="locale"
         value="sq"
         aria-pressed={locale === "sq"}
-        className={`rounded-full px-3 py-1.5 ${locale === "sq" ? "bg-ink text-white" : "text-muted"}`}
+        className={`rounded-full px-3 py-1.5 transition ${locale === "sq" ? "bg-ink text-white" : "text-muted hover:bg-paper hover:text-ink"}`}
       >
         Shqip
       </button>
@@ -27,7 +27,7 @@ export function LocaleSwitch({ locale }: { locale: Locale }) {
         name="locale"
         value="en"
         aria-pressed={locale === "en"}
-        className={`rounded-full px-3 py-1.5 ${locale === "en" ? "bg-ink text-white" : "text-muted"}`}
+        className={`rounded-full px-3 py-1.5 transition ${locale === "en" ? "bg-ink text-white" : "text-muted hover:bg-paper hover:text-ink"}`}
       >
         English
       </button>

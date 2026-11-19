@@ -8,9 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "db:up": "docker compose up -d",
+    "db:up": "docker compose up -d db",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate deploy"
+    "db:migrate": "prisma migrate deploy",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

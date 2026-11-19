@@ -75,6 +75,24 @@ const kindKey = {
   other: "kindOther",
 } as const satisfies Record<string, MessageKey>;
 
+const obligationKindKey = {
+  rent: "kindRent",
+  utility: "kindUtility",
+  loan: "kindLoan",
+  subscription: "kindSubscription",
+  other: "kindOther",
+} as const satisfies Record<string, MessageKey>;
+
+const weekdayMessage = {
+  0: "weekdaySun",
+  1: "weekdayMon",
+  2: "weekdayTue",
+  3: "weekdayWed",
+  4: "weekdayThu",
+  5: "weekdayFri",
+  6: "weekdaySat",
+} as const satisfies Record<number, MessageKey>;
+
 export function categoryLabel(
   locale: Locale,
   category: { key: string; customName: string | null },
@@ -102,6 +120,16 @@ export function timezoneLabel(locale: Locale, zone: string): string {
 export function incomeKindLabel(locale: Locale, kind: string): string {
   if (kind in kindKey) return t(locale, kindKey[kind as keyof typeof kindKey]);
   return kind;
+}
+
+export function obligationKindLabel(locale: Locale, kind: string): string {
+  if (kind in obligationKindKey) return t(locale, obligationKindKey[kind as keyof typeof obligationKindKey]);
+  return kind;
+}
+
+export function weekdayLabel(locale: Locale, weekday: number): string {
+  const key = weekdayMessage[weekday as keyof typeof weekdayMessage];
+  return key ? t(locale, key) : String(weekday);
 }
 
 export function isCurrency(value: string): value is CurrencyCode {

@@ -1,8 +1,9 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { BackButton } from "@/components/back-button";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { ExpenseForm } from "@/components/money-forms";
 import { prisma } from "@/lib/db";
+import { todayInTimeZone } from "@/lib/dates";
 import { getCurrentUser } from "@/lib/current-user";
 import { categoryLabel, isLocale, t, type Locale } from "@/lib/i18n";
 import { minorToInput } from "@/lib/money";
@@ -14,6 +15,7 @@ export default async function EditExpensePage({ params }: { params: Promise<{ id
   const user = await getCurrentUser();
   if (!user || !isLocale(user.locale)) redirect("/api/session/end");
   const locale: Locale = user.locale;
+  const today = todayInTimeZone(user.timezone);
   const { id } = await params;
 
   const expense = await prisma.expense.findFirst({
@@ -30,13 +32,11 @@ export default async function EditExpensePage({ params }: { params: Promise<{ id
 
   return (
     <section className="mx-auto max-w-2xl space-y-6">
-      <Link href="/transactions" className="text-sm font-medium text-muted underline-offset-4 hover:underline">
-        {t(locale, "back")}
-      </Link>
-      <div className="flex items-start justify-between gap-4">
-        <h1 className="font-serif text-4xl tracking-tight">{t(locale, "editExpense")}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <BackButton href="/transactions" label={t(locale, "back")} />
         <ConfirmDelete locale={locale} action={deleteExpenseAction} id={expense.id} messageKey="deleteConfirm" />
       </div>
+      <h1 className="font-serif text-4xl tracking-tight">{t(locale, "editExpense")}</h1>
       <div className="rounded-[28px] border border-line bg-surface p-5 sm:p-7">
         <ExpenseForm
           locale={locale}
@@ -54,6 +54,7 @@ export default async function EditExpensePage({ params }: { params: Promise<{ id
             spentOn: expense.spentOn,
             paymentMethod: method as PaymentMethod,
           }}
+          today={today}
         />
       </div>
     </section>

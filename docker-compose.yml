@@ -15,5 +15,31 @@ services:
       timeout: 5s
       retries: 12
 
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://menaxho:menaxho@db:5432/menaxho?schema=public
+      APP_ORIGIN: http://localhost:3000
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
 volumes:
   menaxho_pg:

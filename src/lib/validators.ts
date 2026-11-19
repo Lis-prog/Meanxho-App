@@ -1,5 +1,13 @@
 import { z } from "zod";
-import { CURRENCIES, GROUP_KEYS, INCOME_KINDS, PAYMENT_METHODS, TIMEZONES } from "@/lib/categories";
+import {
+  BILL_KINDS,
+  CURRENCIES,
+  GROUP_KEYS,
+  INCOME_KINDS,
+  OBLIGATION_CADENCES,
+  PAYMENT_METHODS,
+  TIMEZONES,
+} from "@/lib/categories";
 
 export const passwordSchema = z
   .string()
@@ -46,6 +54,64 @@ export const profileSchema = z.object({
 export const categorySchema = z.object({
   name: z.string().trim().min(1).max(40),
   groupKey: z.enum(GROUP_KEYS),
+});
+
+export const obligationSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  amount: z.string().trim().min(1).max(20),
+  cadence: z.enum(OBLIGATION_CADENCES),
+  kind: z.enum(BILL_KINDS),
+  amountMode: z.enum(["fixed", "variable"]),
+  dueDay: z.string().trim(),
+  weekday: z.string().trim(),
+  startOn: z.string().trim(),
+  endOn: z.string().trim(),
+});
+
+export const billAmountSchema = z.object({
+  amount: z.string().trim().min(1).max(20),
+  amountMode: z.enum(["fixed", "variable"]),
+});
+
+export const loanSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  original: z.string().trim().min(1).max(20),
+  remaining: z.string().trim().min(1).max(20),
+  payment: z.string().trim().min(1).max(20),
+  paymentDay: z.string().trim().min(1).max(2),
+  startOn: z.string().trim(),
+  endOn: z.string().trim(),
+  interest: z.string().trim().max(8),
+});
+
+export const goalSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  target: z.string().trim().min(1).max(20),
+  current: z.string().trim().max(20),
+  monthly: z.string().trim().max(20),
+  deadline: z.string().trim(),
+});
+
+export const budgetSchema = z.object({
+  categoryId: z.string().min(1).max(64),
+  limit: z.string().trim().min(1).max(20),
+});
+
+export const onboardingSchema = z.object({
+  income: z.string().trim().max(20),
+  rent: z.string().trim().max(20),
+  loanPayment: z.string().trim().max(20),
+  loanRemaining: z.string().trim().max(20),
+  subscription: z.string().trim().max(20),
+  savings: z.string().trim().max(20),
+});
+
+export const savingsTargetSchema = z.object({
+  savings: z.string().trim().max(20),
+});
+
+export const contributionSchema = z.object({
+  amount: z.string().trim().min(1).max(20),
 });
 
 export type ActionState = {

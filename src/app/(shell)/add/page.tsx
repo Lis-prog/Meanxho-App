@@ -34,6 +34,7 @@ export default async function AddPage() {
             spentOn: today,
             paymentMethod: "cash",
           }}
+          today={today}
         />
       </div>
     </section>

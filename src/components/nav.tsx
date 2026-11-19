@@ -20,7 +20,7 @@ export function SideNav({ items }: { items: NavItem[] }) {
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={`rounded-2xl px-3 py-2.5 text-sm font-medium ${active ? "bg-pine-soft text-pine-deep" : "text-muted hover:bg-white hover:text-ink"}`}
+            className={`flex min-h-11 cursor-pointer items-center rounded-2xl px-3 py-2.5 text-base font-semibold transition ${active ? "bg-pine-soft text-pine-deep hover:bg-[#d7ebe1]" : "text-ink hover:bg-white hover:text-pine-deep"}`}
           >
             {item.label}
           </Link>
@@ -35,7 +35,7 @@ export function BottomNav({ items }: { items: NavItem[] }) {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 px-2 py-2 backdrop-blur md:hidden" aria-label="Menaxho">
-      <ul className="grid grid-cols-4">
+      <ul className="grid grid-cols-5">
         {items.map((item) => {
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
           const add = item.href === "/add";
@@ -44,7 +44,7 @@ export function BottomNav({ items }: { items: NavItem[] }) {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-12 flex-col items-center justify-center rounded-2xl text-xs font-medium ${add ? "text-pine" : active ? "text-ink" : "text-muted"}`}
+                className={`flex min-h-12 cursor-pointer flex-col items-center justify-center rounded-2xl text-xs font-medium transition hover:bg-paper ${add ? "text-pine" : active ? "text-ink" : "text-muted hover:text-ink"}`}
               >
                 {item.label}
               </Link>

@@ -9,7 +9,7 @@ import { primaryButtonClass, quietButtonClass } from "@/lib/styles";
 
 export default async function HomePage() {
   const user = await getCurrentUser();
-  if (user) redirect("/dashboard");
+  if (user) redirect(user.onboardingCompletedAt ? "/dashboard" : "/onboarding");
   const locale = await readLocale();
 
   return (
@@ -72,9 +72,9 @@ function ExampleCard({ locale }: { locale: Locale }) {
         </div>
       </div>
       <div className="mt-6 space-y-3">
-        <Bar label={locale === "sq" ? "Ushqim" : "Food"} width="62%" />
-        <Bar label={locale === "sq" ? "Transport" : "Transport"} width="28%" />
-        <Bar label={locale === "sq" ? "Qira" : "Rent"} width="84%" />
+        <Bar label={t(locale, "groupFood")} width="62%" />
+        <Bar label={t(locale, "groupTransport")} width="28%" />
+        <Bar label={t(locale, "catRent")} width="84%" />
       </div>
     </aside>
   );

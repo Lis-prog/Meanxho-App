@@ -4,13 +4,13 @@ import { redirect } from "next/navigation";
 import { IncomeForm } from "@/components/money-forms";
 import { Money } from "@/components/money";
 import { prisma } from "@/lib/db";
-import { formatMonthLabel, monthKey, monthRange, parseMonthParam, shiftMonth, todayInTimeZone } from "@/lib/dates";
-import { summarizeMonth } from "@/lib/finance";
+import { formatMonthLabel, monthKey, monthRange, parseMonthParam, shiftMonth, todayInTimeZone, earliestMonth, clampMonth, compareMonths, monthFromIso } from "@/lib/dates";
+import { summarizeControl } from "@/lib/finance";
 import { categoryLabel, isLocale, paymentLabel, t, type Locale } from "@/lib/i18n";
 import { formatMinor } from "@/lib/money";
 import { getCurrentUser } from "@/lib/current-user";
-import { primaryButtonClass } from "@/lib/styles";
-import type { Cadence } from "@/lib/categories";
+import { primaryButtonClass, quietButtonClass } from "@/lib/styles";
+import type { Cadence, ObligationCadence } from "@/lib/categories";
 
 export default async function DashboardPage({
   searchParams,
@@ -38,19 +38,51 @@ export default async function DashboardPage({
     }
   }
 
-  const [incomes, expenses] = await Promise.all([
+  const [incomes, expenses, obligations, payments, budgets, categories, firstExpense, firstDatedIncome, firstObligation] = await Promise.all([
     prisma.income.findMany({ where: { userId: user.id } }),
     prisma.expense.findMany({
       where: { userId: user.id, spentOn: { gte: range.start, lte: range.end } },
       include: { category: true },
       orderBy: [{ spentOn: "desc" }, { createdAt: "desc" }],
     }),
+    prisma.obligation.findMany({ where: { userId: user.id } }),
+    prisma.obligationPayment.findMany({
+      where: { obligation: { userId: user.id } },
+      select: { obligationId: true, periodKey: true },
+    }),
+    prisma.categoryBudget.findMany({ where: { userId: user.id } }),
+    prisma.category.findMany({ where: { userId: user.id } }),
+    prisma.expense.findFirst({ where: { userId: user.id }, orderBy: { spentOn: "asc" }, select: { spentOn: true } }),
+    prisma.income.findFirst({
+      where: { userId: user.id, receivedOn: { not: null } },
+      orderBy: { receivedOn: "asc" },
+      select: { receivedOn: true },
+    }),
+    prisma.obligation.findFirst({ where: { userId: user.id }, orderBy: { startOn: "asc" }, select: { startOn: true } }),
   ]);
 
-  const summary = summarizeMonth({
+  const currentMonth = monthFromIso(today);
+  const startMonth = earliestMonth(
+    [
+      todayInTimeZone(user.timezone, user.createdAt),
+      firstExpense?.spentOn ?? "",
+      firstDatedIncome?.receivedOn ?? "",
+      firstObligation?.startOn ?? "",
+    ],
+    today,
+  );
+  const visible = clampMonth(selected, startMonth, currentMonth);
+  if (monthKey(selected.year, selected.month) !== monthKey(visible.year, visible.month)) {
+    redirect(`/dashboard?month=${monthKey(visible.year, visible.month)}`);
+  }
+
+  const categoryNames = new Map(categories.map((category) => [category.id, categoryLabel(locale, category)]));
+
+  const summary = summarizeControl({
     year: selected.year,
     month: selected.month,
     today,
+    savingsTargetMinor: user.savingsTargetMinor,
     incomes: incomes.map((income) => ({
       amountMinor: income.amountMinor,
       cadence: income.cadence as Cadence,
@@ -62,12 +94,30 @@ export default async function DashboardPage({
       spentOn: expense.spentOn,
       categoryId: expense.categoryId,
     })),
+    obligations: obligations.map((obligation) => ({
+      id: obligation.id,
+      amountMinor: obligation.amountMinor,
+      cadence: obligation.cadence as ObligationCadence,
+      dueDay: obligation.dueDay,
+      weekday: obligation.weekday,
+      startOn: obligation.startOn,
+      endOn: obligation.endOn,
+      paused: obligation.paused,
+    })),
+    payments,
+    budgets: budgets.map((budget) => ({
+      categoryId: budget.categoryId,
+      monthlyLimitMinor: budget.monthlyLimitMinor,
+    })),
   });
 
   const previous = shiftMonth(selected.year, selected.month, -1);
   const next = shiftMonth(selected.year, selected.month, 1);
+  const canGoPrev = compareMonths(selected, startMonth) > 0;
+  const canGoNext = compareMonths(selected, currentMonth) < 0;
   const names = new Map(expenses.map((expense) => [expense.categoryId, categoryLabel(locale, expense.category)]));
   const max = summary.byCategory[0]?.totalMinor ?? 1;
+  const todayLeft = Math.max(0, summary.safeDailyMinor - (current ? summary.todaySpentMinor : 0));
 
   return (
     <div className="space-y-8">
@@ -75,11 +125,16 @@ export default async function DashboardPage({
         <MonthLink
           href={`/dashboard?month=${monthKey(previous.year, previous.month)}`}
           label={t(locale, "prevMonth")}
+          disabled={!canGoPrev}
         >
           ←
         </MonthLink>
         <h1 className="text-center font-serif text-2xl capitalize">{formatMonthLabel(selected.year, selected.month, locale)}</h1>
-        <MonthLink href={`/dashboard?month=${monthKey(next.year, next.month)}`} label={t(locale, "nextMonth")}>
+        <MonthLink
+          href={`/dashboard?month=${monthKey(next.year, next.month)}`}
+          label={t(locale, "nextMonth")}
+          disabled={!canGoNext}
+        >
           →
         </MonthLink>
       </div>
@@ -92,6 +147,23 @@ export default async function DashboardPage({
           })}
         </p>
       ) : null}
+
+      {summary.alerts.map((alert) => (
+        <p
+          key={alert.categoryId}
+          role="status"
+          className={`rounded-2xl px-4 py-3 text-sm ${alert.level === "warn" ? "bg-pine-soft text-pine-deep" : "bg-danger-soft text-danger"}`}
+        >
+          {alert.level === "warn"
+            ? t(locale, "alertWarn", { category: categoryNames.get(alert.categoryId) ?? "" })
+            : alert.level === "hit"
+              ? t(locale, "alertHit", { category: categoryNames.get(alert.categoryId) ?? "" })
+              : t(locale, "alertOver", {
+                  category: categoryNames.get(alert.categoryId) ?? "",
+                  amount: formatMinor(alert.spentMinor - alert.limitMinor, user.currency, locale),
+                })}
+        </p>
+      ))}
 
       {summary.incomeMinor === 0 ? (
         <section className="rounded-[28px] border border-line bg-surface p-6 sm:p-8">
@@ -123,9 +195,35 @@ export default async function DashboardPage({
             </Link>
           </section>
 
-          <section className="grid gap-3 sm:grid-cols-3">
+          {current ? (
+            <section className="rounded-[28px] border border-line bg-surface p-5 sm:p-6">
+              <p className="text-sm text-muted">{t(locale, "safeToSpend")}</p>
+              <p className="mt-2 font-serif text-4xl">
+                <Money amountMinor={summary.safeDailyMinor} currency={user.currency} locale={locale} />
+              </p>
+              <p className="mt-3 text-sm text-muted">
+                {summary.safeDailyMinor > 0
+                  ? t(locale, "safeToSpendBody", {
+                      amount: formatMinor(summary.safeDailyMinor, user.currency, locale),
+                    })
+                  : t(locale, "safeToSpendZero")}
+              </p>
+              <p className="mt-2 text-sm text-muted">
+                {t(locale, "daysLeft", { count: summary.daysRemaining })} · {t(locale, "remainingToday")}:{" "}
+                {formatMinor(todayLeft, user.currency, locale)}
+              </p>
+              <p className="mt-3 text-xs text-muted">{t(locale, "estimateNote")}</p>
+            </section>
+          ) : null}
+
+          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat label={t(locale, "income")} value={<Money amountMinor={summary.incomeMinor} currency={user.currency} locale={locale} />} href="/income" />
             <Stat label={t(locale, "spent")} value={<Money amountMinor={summary.spentMinor} currency={user.currency} locale={locale} />} />
+            <Stat
+              label={t(locale, "planned")}
+              value={<Money amountMinor={summary.plannedUnpaidMinor} currency={user.currency} locale={locale} />}
+              href="/plan"
+            />
             <Stat
               label={current ? t(locale, "today") : t(locale, "navHistory")}
               value={
@@ -162,7 +260,7 @@ export default async function DashboardPage({
           <section>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-serif text-2xl">{t(locale, "recent")}</h2>
-              <Link href="/transactions" className="text-sm font-medium text-pine-deep underline-offset-4 hover:underline">
+              <Link href="/transactions" className={quietButtonClass}>
                 {t(locale, "seeAll")}
               </Link>
             </div>
@@ -174,9 +272,27 @@ export default async function DashboardPage({
   );
 }
 
-function MonthLink({ href, label, children }: { href: string; label: string; children: React.ReactNode }) {
+function MonthLink({
+  href,
+  label,
+  children,
+  disabled,
+}: {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+  disabled?: boolean;
+}) {
+  const className = "grid h-11 w-11 place-items-center rounded-full border border-line bg-surface text-lg transition";
+  if (disabled) {
+    return (
+      <span aria-disabled="true" className={`${className} cursor-not-allowed opacity-35`}>
+        {children}
+      </span>
+    );
+  }
   return (
-    <Link href={href} aria-label={label} className="grid h-11 w-11 place-items-center rounded-full border border-line bg-surface text-lg">
+    <Link href={href} aria-label={label} className={`${className} cursor-pointer hover:border-ink hover:bg-white hover:shadow-[0_8px_18px_-12px_rgb(28_25_21_/_0.45)]`}>
       {children}
     </Link>
   );
@@ -185,7 +301,7 @@ function MonthLink({ href, label, children }: { href: string; label: string; chi
 function Stat({ label, value, href }: { label: string; value: React.ReactNode; href?: string }) {
   const body = (
     <div className="rounded-3xl border border-line bg-surface px-4 py-4">
-      <p className="text-xs text-muted">{label}</p>
+      <p className="text-sm text-muted">{label}</p>
       <p className="mt-2 font-serif text-2xl">{value}</p>
     </div>
   );

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BackButton } from "@/components/back-button";
 import { ResetForm } from "@/components/auth-forms";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/locale";
@@ -22,9 +22,7 @@ export default async function ResetPasswordPage({
       ) : (
         <ResetForm locale={locale} token={token} />
       )}
-      <Link href="/login" className="text-sm font-medium underline-offset-4 hover:underline">
-        {t(locale, "back")}
-      </Link>
+      <BackButton href="/login" label={t(locale, "back")} />
     </section>
   );
 }

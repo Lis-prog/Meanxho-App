@@ -8,21 +8,27 @@ datasource db {
 }
 
 model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  passwordHash   String
-  name           String
-  locale         String   @default("sq")
-  currency       String   @default("EUR")
-  timezone       String   @default("Europe/Belgrade")
-  sessionVersion Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  passwordHash          String
+  name                  String
+  locale                String    @default("sq")
+  currency              String    @default("EUR")
+  timezone              String    @default("Europe/Tirane")
+  sessionVersion        Int       @default(0)
+  savingsTargetMinor    Int       @default(0)
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   categories  Category[]
   incomes     Income[]
   expenses    Expense[]
   resetTokens PasswordResetToken[]
+  obligations Obligation[]
+  loans       Loan[]
+  goals       SavingsGoal[]
+  budgets     CategoryBudget[]
 }
 
 model PasswordResetToken {
@@ -37,16 +43,18 @@ model PasswordResetToken {
 }
 
 model Category {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  key        String
-  customName String?
-  groupKey   String
-  icon       String
-  archived   Boolean  @default(false)
-  sortOrder  Int      @default(0)
-  expenses   Expense[]
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key         String
+  customName  String?
+  groupKey    String
+  icon        String
+  archived    Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  expenses    Expense[]
+  obligations Obligation[]
+  budgets     CategoryBudget[]
 
   @@unique([userId, key])
   @@index([userId, archived])
@@ -74,12 +82,97 @@ model Expense {
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   categoryId    String
   category      Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  obligationId  String?
+  obligation    Obligation? @relation(fields: [obligationId], references: [id], onDelete: SetNull)
   amountMinor   Int
   note          String?
   paymentMethod String
   spentOn       String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  payment       ObligationPayment?
 
   @@index([userId, spentOn])
+  @@index([obligationId])
+}
+
+model Obligation {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name        String
+  amountMinor Int
+  cadence     String
+  dueDay      Int?
+  weekday     Int?
+  startOn     String
+  endOn       String?
+  paused      Boolean  @default(false)
+  kind        String
+  amountMode  String   @default("fixed")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  payments    ObligationPayment[]
+  loan        Loan?
+  expenses    Expense[]
+
+  @@index([userId, paused])
+}
+
+model ObligationPayment {
+  id            String     @id @default(cuid())
+  obligationId  String
+  obligation    Obligation @relation(fields: [obligationId], references: [id], onDelete: Cascade)
+  periodKey     String
+  expenseId     String?    @unique
+  expense       Expense?   @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+  paidOn        String
+  createdAt     DateTime   @default(now())
+
+  @@unique([obligationId, periodKey])
+}
+
+model Loan {
+  id             String     @id @default(cuid())
+  userId         String
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  obligationId   String     @unique
+  obligation     Obligation @relation(fields: [obligationId], references: [id], onDelete: Cascade)
+  originalMinor  Int
+  remainingMinor Int
+  interestBps    Int?
+  endOn          String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([userId])
+}
+
+model SavingsGoal {
+  id                       String   @id @default(cuid())
+  userId                   String
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                     String
+  targetMinor              Int
+  currentMinor             Int      @default(0)
+  monthlyContributionMinor Int      @default(0)
+  deadline                 String?
+  archived                 Boolean  @default(false)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@index([userId, archived])
+}
+
+model CategoryBudget {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId        String
+  category          Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  monthlyLimitMinor Int
+
+  @@unique([userId, categoryId])
 }

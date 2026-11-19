@@ -28,6 +28,10 @@ function refreshMoney() {
   revalidatePath("/income");
   revalidatePath("/add");
   revalidatePath("/settings");
+  revalidatePath("/plan");
+  revalidatePath("/savings");
+  revalidatePath("/budgets");
+  revalidatePath("/reports");
 }
 
 export async function createExpenseAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -196,11 +200,12 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
   if (!parsed.success) return { error: "errorInvalid" };
 
   if (parsed.data.currency !== user.currency) {
-    const [expenses, incomes] = await Promise.all([
+    const [expenses, incomes, obligations] = await Promise.all([
       prisma.expense.count({ where: { userId: user.id } }),
       prisma.income.count({ where: { userId: user.id } }),
+      prisma.obligation.count({ where: { userId: user.id } }),
     ]);
-    if (expenses + incomes > 0) return { error: "errorCurrencyLocked" };
+    if (expenses + incomes + obligations > 0) return { error: "errorCurrencyLocked" };
   }
 
   await prisma.user.update({

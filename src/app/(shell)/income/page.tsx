@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { todayInTimeZone } from "@/lib/dates";
 import { getCurrentUser } from "@/lib/current-user";
 import { incomeKindLabel, isLocale, t, type Locale } from "@/lib/i18n";
+import { quietButtonClass } from "@/lib/styles";
 import { deleteIncomeAction, toggleIncomeAction } from "@/server/finance";
 
 export default async function IncomePage() {
@@ -42,7 +43,7 @@ export default async function IncomePage() {
                   <Money amountMinor={income.amountMinor} currency={user.currency} locale={locale} className="font-serif text-2xl" />
                   <form action={toggleIncomeAction}>
                     <input type="hidden" name="id" value={income.id} />
-                    <button className="text-sm font-medium underline-offset-4 hover:underline" type="submit">
+                    <button className={quietButtonClass} type="submit">
                       {income.active ? t(locale, "pause") : t(locale, "resume")}
                     </button>
                   </form>

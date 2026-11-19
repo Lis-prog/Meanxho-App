@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/current-user";
 import { categoryLabel, groupLabel, isLocale, t, type Locale } from "@/lib/i18n";
 import { toggleCategoryAction } from "@/server/finance";
 import { TIMEZONES } from "@/lib/categories";
+import { dangerButtonClass, quietButtonClass } from "@/lib/styles";
 
 export default async function SettingsPage({
   searchParams,
@@ -15,12 +16,13 @@ export default async function SettingsPage({
   if (!user || !isLocale(user.locale)) redirect("/api/session/end");
   const locale: Locale = user.locale;
   const params = await searchParams;
-  const [expenseCount, incomeCount, categories] = await Promise.all([
+  const [expenseCount, incomeCount, obligationCount, categories] = await Promise.all([
     prisma.expense.count({ where: { userId: user.id } }),
     prisma.income.count({ where: { userId: user.id } }),
+    prisma.obligation.count({ where: { userId: user.id } }),
     prisma.category.findMany({ where: { userId: user.id }, orderBy: [{ archived: "asc" }, { sortOrder: "asc" }] }),
   ]);
-  const timezone = TIMEZONES.find((zone) => zone === user.timezone) ?? "Europe/Belgrade";
+  const timezone = TIMEZONES.find((zone) => zone === user.timezone) ?? "Europe/Tirane";
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -39,7 +41,7 @@ export default async function SettingsPage({
           name={user.name}
           currency={user.currency}
           timezone={timezone}
-          currencyLocked={expenseCount + incomeCount > 0}
+          currencyLocked={expenseCount + incomeCount + obligationCount > 0}
         />
       </section>
 
@@ -60,7 +62,7 @@ export default async function SettingsPage({
               </span>
               <form action={toggleCategoryAction}>
                 <input type="hidden" name="id" value={category.id} />
-                <button className="text-sm font-medium underline-offset-4 hover:underline" type="submit">
+                <button className={category.archived ? quietButtonClass : dangerButtonClass} type="submit">
                   {category.archived ? t(locale, "unarchive") : t(locale, "archive")}
                 </button>
               </form>

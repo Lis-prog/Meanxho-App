@@ -1,12 +1,14 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { ConfirmDialog, useConfirmGate } from "@/components/confirm-dialog";
 import { GROUP_KEYS, INCOME_KINDS, PAYMENT_METHODS, type PaymentMethod } from "@/lib/categories";
 import { groupLabel, t, translateError, type Locale } from "@/lib/i18n";
-import { inputClass, labelClass, primaryButtonClass } from "@/lib/styles";
+import { dangerButtonClass, inputClass, labelClass, primaryButtonClass } from "@/lib/styles";
 import { createCategoryAction, createExpenseAction, createIncomeAction, deleteAccountAction, updateExpenseAction, updateProfileAction } from "@/server/finance";
 import { CURRENCIES, TIMEZONES } from "@/lib/categories";
 import { timezoneLabel } from "@/lib/i18n";
+import type { MessageKey } from "@/lib/i18n/sq";
 
 export type CategoryChoice = {
   id: string;
@@ -24,11 +26,38 @@ function Alert({ locale, error }: { locale: Locale; error?: string }) {
   );
 }
 
+function AddConfirm({
+  locale,
+  open,
+  bodyKey,
+  onConfirm,
+  onCancel,
+}: {
+  locale: Locale;
+  open: boolean;
+  bodyKey: MessageKey;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <ConfirmDialog
+      open={open}
+      title={t(locale, "confirmAddTitle")}
+      body={t(locale, bodyKey)}
+      confirmLabel={t(locale, "yes")}
+      cancelLabel={t(locale, "no")}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+    />
+  );
+}
+
 export function ExpenseForm({
   locale,
   categories,
   defaults,
   mode,
+  today,
 }: {
   locale: Locale;
   categories: CategoryChoice[];
@@ -41,17 +70,24 @@ export function ExpenseForm({
     paymentMethod: PaymentMethod;
   };
   mode: "create" | "edit";
+  today: string;
 }) {
   const action = mode === "create" ? createExpenseAction : updateExpenseAction;
   const [state, formAction, pending] = useActionState(action, {});
+  const { formRef, open, onSubmit, confirm, cancel, reset } = useConfirmGate();
   const groups = GROUP_KEYS.map((key) => ({
     key,
     label: groupLabel(locale, key),
     items: categories.filter((category) => category.groupKey === key),
   })).filter((group) => group.items.length > 0);
 
+  useEffect(() => {
+    if (state.error) reset();
+  }, [state.error, reset]);
+
   return (
-    <form action={formAction} className="space-y-6">
+    <>
+      <form ref={formRef} action={formAction} className="space-y-6" onSubmit={onSubmit}>
       {defaults.id ? <input type="hidden" name="id" value={defaults.id} /> : null}
       <Alert locale={locale} error={state.error} />
       <label className="block">
@@ -100,7 +136,7 @@ export function ExpenseForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className={labelClass}>{t(locale, "date")}</span>
-          <input className={inputClass} type="date" name="spentOn" defaultValue={defaults.spentOn} required />
+          <input className={inputClass} type="date" name="spentOn" defaultValue={defaults.spentOn} max={today} required />
         </label>
         <label className="block">
           <span className={labelClass}>{t(locale, "payment")}</span>
@@ -129,6 +165,14 @@ export function ExpenseForm({
         {pending ? t(locale, "saving") : t(locale, mode === "create" ? "saveExpense" : "saveChanges")}
       </button>
     </form>
+      <AddConfirm
+        locale={locale}
+        open={open}
+        bodyKey={mode === "create" ? "confirmAddExpense" : "confirmSaveChanges"}
+        onConfirm={confirm}
+        onCancel={cancel}
+      />
+    </>
   );
 }
 
@@ -140,9 +184,15 @@ export function IncomeForm({
   today: string;
 }) {
   const [state, action, pending] = useActionState(createIncomeAction, {});
+  const { formRef, open, onSubmit, confirm, cancel, reset } = useConfirmGate();
+
+  useEffect(() => {
+    if (state.error) reset();
+  }, [state.error, reset]);
 
   return (
-    <form action={action} className="space-y-4">
+    <>
+      <form ref={formRef} action={action} className="space-y-4" onSubmit={onSubmit}>
       <Alert locale={locale} error={state.error} />
       <label className="block">
         <span className={labelClass}>{t(locale, "amount")}</span>
@@ -169,7 +219,7 @@ export function IncomeForm({
       </div>
       <label className="block">
         <span className={labelClass}>{t(locale, "date")}</span>
-        <input className={inputClass} type="date" name="receivedOn" defaultValue={today} />
+        <input className={inputClass} type="date" name="receivedOn" defaultValue={today} max={today} />
         <span className="mt-2 block text-sm text-muted">{t(locale, "incomeBody")}</span>
       </label>
       <label className="block">
@@ -180,6 +230,8 @@ export function IncomeForm({
         {pending ? t(locale, "saving") : t(locale, "addIncome")}
       </button>
     </form>
+      <AddConfirm locale={locale} open={open} bodyKey="confirmAddIncome" onConfirm={confirm} onCancel={cancel} />
+    </>
   );
 }
 
@@ -278,7 +330,7 @@ export function DeleteAccountForm({ locale }: { locale: Locale }) {
         <span className={labelClass}>{t(locale, "confirmEmail")}</span>
         <input className={inputClass} name="confirmEmail" type="email" autoComplete="off" required />
       </label>
-      <button className="inline-flex min-h-11 items-center justify-center rounded-full bg-danger px-5 py-3 text-sm font-semibold text-white disabled:opacity-60" disabled={pending}>
+      <button className={dangerButtonClass} disabled={pending}>
         {pending ? t(locale, "saving") : t(locale, "deleteAccount")}
       </button>
     </form>

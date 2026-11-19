@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     default: "Menaxho",
     template: "%s · Menaxho",
   },
-  description: "Dije ku shkojnë paratë sot. Shëno shpenzimet dhe shih sa të mbetet këtë muaj.",
+  description: "Shëno shpenzimet dhe shih sa të mbeten këtë muaj.",
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

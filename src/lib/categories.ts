@@ -43,6 +43,26 @@ export type IncomeKind = (typeof INCOME_KINDS)[number];
 export const CADENCES = ["monthly", "once"] as const;
 export type Cadence = (typeof CADENCES)[number];
 
+export const OBLIGATION_CADENCES = ["monthly", "weekly", "yearly"] as const;
+export type ObligationCadence = (typeof OBLIGATION_CADENCES)[number];
+
+export const OBLIGATION_KINDS = ["rent", "utility", "subscription", "loan", "other"] as const;
+export type ObligationKind = (typeof OBLIGATION_KINDS)[number];
+
+export const BILL_KINDS = ["rent", "utility", "subscription", "other"] as const;
+export type BillKind = (typeof BILL_KINDS)[number];
+
+export const AMOUNT_MODES = ["fixed", "variable"] as const;
+export type AmountMode = (typeof AMOUNT_MODES)[number];
+
+export function categoryKeyForKind(kind: ObligationKind): string | null {
+  if (kind === "rent") return "rent";
+  if (kind === "loan") return "loan";
+  if (kind === "subscription") return "subscriptions";
+  if (kind === "utility") return "utilities";
+  return null;
+}
+
 export const TIMEZONES = [
   "Europe/Belgrade",
   "Europe/Tirane",

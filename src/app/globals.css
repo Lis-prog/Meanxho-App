@@ -55,6 +55,24 @@ body {
   outline-offset: 3px;
 }
 
+button:not(:disabled),
+a[href],
+[role="button"],
+select,
+summary,
+label,
+input[type="submit"],
+input[type="button"],
+input[type="radio"],
+input[type="checkbox"] {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 input[type="date"] {
   min-height: 48px;
 }

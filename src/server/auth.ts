@@ -67,6 +67,7 @@ export async function registerAction(_prev: ActionState, formData: FormData): Pr
           passwordHash,
           locale: parsed.data.locale,
           currency: parsed.data.currency,
+          timezone: "Europe/Tirane",
         },
       });
       await tx.category.createMany({
@@ -90,7 +91,7 @@ export async function registerAction(_prev: ActionState, formData: FormData): Pr
     return { error: "errorGeneric" };
   }
 
-  redirect("/dashboard");
+  redirect("/onboarding");
 }
 
 export async function loginAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -111,7 +112,7 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
 
   const started = await startSession(user.id, user.sessionVersion, user.locale);
   if (!started) return { error: "errorGeneric" };
-  redirect("/dashboard");
+  redirect(user.onboardingCompletedAt ? "/dashboard" : "/onboarding");
 }
 
 export async function logoutAction() {
@@ -162,7 +163,7 @@ export async function resetPasswordAction(_prev: ActionState, formData: FormData
 
   const started = await startSession(user.id, user.sessionVersion, user.locale);
   if (!started) return { error: "errorGeneric" };
-  redirect("/dashboard");
+  redirect(user.onboardingCompletedAt ? "/dashboard" : "/onboarding");
 }
 
 export async function setLocaleAction(formData: FormData) {
