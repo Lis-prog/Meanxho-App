@@ -1,54 +1,54 @@
 # Menaxho
 
-Aplikacion lokal për kontrollin e parave personale. Të dhënat rrinë në kompjuterin tënd. Nuk ka bankë, host publik, as email të jashtëm në këtë version.
+A local application for personal money management. Data stays on your computer. This version does not include banking integration, public hosting, or external email services.
 
-Ky folder është projekti. Git-in e bën ti kur të duash, nga ky folder. Nuk nevojitet branch apo commit nga Cursor.
+This folder contains the project. You manage Git whenever you want from this folder. No branch or commit is required from Cursor.
 
-## Çfarë bën MVP-ja
+## MVP Features
 
-- Llogari: regjistrim, hyrje, dalje, rivendosje fjalëkalimi, fshirje
-- Shqip dhe anglisht
-- Monedha: EUR, ALL, MKD, USD, GBP
-- Onboarding i shkurtër (rroga, qira, kredi, abonim, objektiv kursimi)
-- Shpenzim i shpejtë me kategori
-- Të ardhura mujore dhe njëherëshe
-- Fatura të përsëritura: shënoji të paguara kur i paguan, nuk postohen vetë
-- Kredi: kësti mujor + mbetja
-- Qëllime kursimi dhe objektiv mujor
-- Buxhete sipas kategorie, me sinjal 75% / 100% / mbi kufi
-- Paneli: të ardhura, shpenzime, tepricë, fatura të papaguara, sa mund të shpenzosh në ditë
-- Historik, raporte javorë/mujorë/vjetorë, një simulim “po sikur të shpenzoja më pak”
+- Accounts: registration, login, logout, password reset, and account deletion
+- Albanian and English
+- Currencies: EUR, ALL, MKD, USD, and GBP
+- Short onboarding (salary, rent, loan, subscription, and savings goal)
+- Quick expense entry by category
+- Monthly and one-time income
+- Recurring bills: mark them as paid when you pay them; they are not posted automatically
+- Loans: monthly installment and remaining balance
+- Savings goals and monthly targets
+- Category budgets with 75%, 100%, and over-limit indicators
+- Dashboard: income, expenses, remaining balance, unpaid bills, and the amount available to spend per day
+- History, weekly/monthly/yearly reports, and a “What if I spent less?” simulation
 
-Rivendosja e fjalëkalimit e shkruan lidhjen në terminalin ku xhiron aplikacioni.
+Password reset writes the reset link to the terminal where the application is running.
 
-## Si e niset me Docker
+## Run with Docker
 
-Duhet Docker Desktop i hapur.
+Docker Desktop must be open.
 
-Në PowerShell, brenda këtij folderi:
+In PowerShell, inside this folder, run:
 
 ```powershell
 copy .env.example .env
 docker compose up --build
 ```
 
-Hape [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000).
 
-Në `.env`, `SESSION_SECRET` duhet të jetë të paktën 32 shenja. Zëvendëso shembullin.
+In `.env`, `SESSION_SECRET` must contain at least 32 characters. Replace the example value.
 
-Baza dëgjon në portin **5433** në PC, që të mos përzihet me një PostgreSQL tjetër në 5432. Brenda Docker-it, aplikacioni flet me bazën në portin e brendshëm 5432.
+The database listens on port **5433** on your PC to avoid conflicts with another PostgreSQL instance on port 5432. Inside Docker, the application communicates with the database on its internal port 5432.
 
-Ndalimi:
+To stop the application:
 
 ```powershell
 docker compose down
 ```
 
-Të dhënat e bazës mbeten në volume-in `menaxho_pg` derisa ta fshish me `docker compose down -v`.
+Database data remains in the `menaxho_pg` volume until you remove it with `docker compose down -v`.
 
-## Si e niset për zhvillim (opsionale)
+## Development Setup (Optional)
 
-Vetëm baza në Docker, Next.js në PC:
+Run only the database in Docker and Next.js on your PC:
 
 ```powershell
 copy .env.example .env
@@ -59,17 +59,17 @@ npx prisma migrate deploy
 npm run dev
 ```
 
-## Teste
+## Tests
 
 ```powershell
 npm test
 ```
 
-## Dokumente
+## Documentation
 
-- [docs/MVP.md](docs/MVP.md) — çfarë hyn në këtë version, çfarë jo
-- [docs/DECISIONS.md](docs/DECISIONS.md) — vendimet e motorit të parave
+- [docs/MVP.md](docs/MVP.md) — what is and is not included in this version
+- [docs/DECISIONS.md](docs/DECISIONS.md) — money-engine decisions
 
-## Çfarë nuk është këtu
+## What Is Not Included
 
-Bankë, AI, investime, kriptomonedha, taksa, llogari familjare, aplikacion native, hostim në internet.
+Banking, AI, investments, cryptocurrencies, taxes, family accounts, a native application, or internet hosting.
